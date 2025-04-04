@@ -8,6 +8,7 @@ and https://botorch.org/docs/tutorials/discrete_multi_fidelity_bo/
 import math
 import numpy as np
 from dataclasses import dataclass
+import time
 
 import torch
 from botorch.optim import optimize_acqf
@@ -23,11 +24,11 @@ dtype = torch.double
 # GP and BO hyperparameters
 DEFAULT_NOISE_INTERVAL = [1e-8,1e-5]
 DEFAULT_LENGTHSCALE_INTERVAL = [0.005,4.0]
-DEFAULT_NUM_RESTARTS = 10
-DEFAULT_RAW_SAMPLES  = 512
+DEFAULT_NUM_RESTARTS = 1
+DEFAULT_RAW_SAMPLES  = 256
 
 # Multi-Fidelity hyperparameters
-DEFAULT_NUM_FANTASIES = 128
+DEFAULT_NUM_FANTASIES = 64
 
 # TuRBO hyperparameters
 DEFAULT_LENGTH = 0.8
@@ -172,6 +173,7 @@ def generate_MFKG_acqf(domain,cost_model,GP_model,bounds,num_restarts,raw_sample
         values=[domain.target_fidelity],
     )
 
+    start = time.time()
     _, current_value = optimize_acqf(
         acq_function=curr_val_acqf,
         bounds=bounds[:,:-1],
@@ -180,6 +182,7 @@ def generate_MFKG_acqf(domain,cost_model,GP_model,bounds,num_restarts,raw_sample
         raw_samples=raw_samples,
         options={"batch_limit": 10, "maxiter": 200},
     )
+    print(f'Finding current optimum, elasped time: {time.time()-start}')
 
     mfkg = qMultiFidelityKnowledgeGradient(
         model=GP_model,
